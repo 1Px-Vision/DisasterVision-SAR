@@ -4,6 +4,8 @@ A **deep-learning framework for victim detection and environment understanding i
 
 The application is designed for disaster-response imagery such as earthquake rubble, collapsed structures, damaged urban environments, and search-and-rescue scenes. It detects potential victims and generates a structured description of the surrounding environment to support USAR situational awareness.
 
+![](https://github.com/1Px-Vision/DisasterVision-SAR/blob/main/SAR_Victims.jpg)
+
 ---
 
 ## Overview
