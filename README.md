@@ -2,7 +2,7 @@
 
 A **deep-learning framework for victim detection and environment understanding in Urban Search and Rescue (USAR) scenarios** using a lightweight **SimAM-FPN Faster R-CNN** detector combined with a **Vision-Language Model (VLM)**.
 
-The application is designed for disaster-response imagery such as earthquake rubble, collapsed structures, damaged urban environments, and search-and-rescue scenes. It detects potential victims and generates a structured description of the surrounding environment to support USAR situational awareness.
+The application is designed for disaster-response imagery such as earthquake rubble, collapsed structures, damaged urban environments, and search-and-rescue scenes. It detects potential victims and generates a structured description of the surrounding environment to support situational awareness in USAR.
 
 ![](https://github.com/1Px-Vision/DisasterVision-SAR/blob/main/SAR_Victims.jpg)
 
@@ -698,7 +698,7 @@ SAR-Victim-Detection-USAR-VLM/
 ├── requirements.txt
 │
 ├── src/
-│   └── SAR_FasterRCNN_SmolVLM_USAR_Colab_256.py
+│   └── SAR_FasterRCNN_SmolVLM_USAR_Colab_256_FIXED.py
 │
 ├── models/
 │   └── README.md
