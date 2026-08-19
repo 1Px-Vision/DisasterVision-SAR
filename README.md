@@ -316,7 +316,7 @@ Conceptually,
 
 $$
 L_k =
-{
+\{
 c_k,
 s_k,
 u_k,
@@ -325,7 +325,7 @@ g_x,
 g_y,
 C_k,
 P_k
-},
+\}
 $$
 
 where:
