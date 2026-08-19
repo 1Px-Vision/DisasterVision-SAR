@@ -6,6 +6,8 @@ The project combines a specialized **SimAM-FPN Faster R-CNN victim detector**, a
 
 The system is designed for research involving **earthquake environments, collapsed structures, UAV-assisted search and rescue, GPS-denied navigation, and disaster-scene perception**.
 
+![](https://github.com/1Px-Vision/DisasterVision-SAR/blob/main/Victims_detection.jpg)
+
 ---
 
 ## Key Features
