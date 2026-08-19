@@ -798,20 +798,19 @@ The framework investigates a hybrid perception strategy:
 \text{Vision-Language Reasoning}.
 ]
 
-The specialized SimAM-FPN detector provides task-specific victim localization, while the open-vocabulary detector expands the semantic representation of the environment.
+The specialized SimAM-FPN detector provides task-specific victim localization, while the open-vocabulary detector expands the environment's semantic representation.
 
 Cross-model IoU then provides an interpretable measure of spatial agreement:
-
+$$
 [
-A_{ij}
-======
-
+A_{ij}=
 IoU
 \left(
 B_i^{SimAM},
 B_j^{OV}
 \right).
 ]
+$$
 
 The resulting semantic landmarks can subsequently be associated with depth, UAV pose, VIO, SLAM, or UWB localization to construct a rescue-oriented spatial map.
 
