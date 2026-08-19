@@ -200,8 +200,7 @@ The system then compares the `trapped person` bounding box with victim boxes pro
 For a SimAM-FPN victim bounding box (B_S) and an open-vocabulary trapped-person box (B_T), spatial agreement is calculated as
 
 $$
-\operatorname{IoU}(B_S,B_T)
-=
+\operatorname{IoU}(B_S,B_T) =
 \frac{|B_S \cap B_T|}
 {|B_S \cup B_T|}
 $$
