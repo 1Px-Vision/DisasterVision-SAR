@@ -1,413 +1,581 @@
-# SAR Victim Detection and USAR Scene Understanding
+# Open-Vocabulary USAR Victim Detection and Rescue Scene Understanding
 
-A **deep-learning framework for victim detection and environment understanding in Urban Search and Rescue (USAR) scenarios** using a lightweight **SimAM-FPN Faster R-CNN** detector combined with a **Vision-Language Model (VLM)**.
+An AI-assisted framework for **victim detection, open-vocabulary rescue landmark recognition, and scene understanding in Urban Search and Rescue (USAR) environments**.
 
-The application is designed for disaster-response imagery such as earthquake rubble, collapsed structures, damaged urban environments, and search-and-rescue scenes. It detects potential victims and generates a structured description of the surrounding environment to support situational awareness in USAR.
+The project combines a specialized **SimAM-FPN Faster R-CNN victim detector**, an **open-vocabulary object detection branch**, and a lightweight **Vision-Language Model (VLM)** to detect potential victims, identify rescue-relevant objects and hazards, construct semantic rescue landmarks, and generate structured operational reports.
 
-![](https://github.com/1Px-Vision/DisasterVision-SAR/blob/main/SAR_Victims.jpg)
+The system is designed for research involving **earthquake environments, collapsed structures, UAV-assisted search and rescue, GPS-denied navigation, and disaster-scene perception**.
 
 ---
 
-## Overview
+## Key Features
 
-The proposed system combines two complementary AI components:
+* Specialized **SimAM-FPN Faster R-CNN** victim detector
+* Open-vocabulary rescue-scene detection
+* Recognition of **`trapped person` as a victim candidate**
+* Cross-model IoU comparison between:
 
-1. **SimAM-FPN Faster R-CNN**
-
-   * Detects candidate victims in disaster imagery.
-   * Uses a lightweight custom convolutional backbone.
-   * Incorporates **SimAM attention**.
-   * Uses a custom **Feature Pyramid Network (FPN)**.
-   * Performs inference on **256 × 256 RGB images**.
-
-2. **Vision-Language Model**
-
-   * Default model: `HuggingFaceTB/SmolVLM-500M-Instruct`.
-   * Analyzes the visual environment.
-   * Receives victim detections as contextual information.
-   * Generates an operationally oriented USAR scene description.
-
-The detector output is treated as **candidate victim information**, not as verified ground truth.
+  * SimAM-FPN victim detections
+  * Open-vocabulary `trapped person` detections
+* Optional ground-truth IoU evaluation
+* Semantic rescue-landmark indexing
+* Rescue-oriented object categorization
+* Optional depth-based 3-D landmark projection
+* VLM-based disaster-scene description
+* Structured USAR operational report
+* CUDA GPU acceleration
+* 256 × 256 image inference
+* Google Colab / Jupyter interactive interface
+* PNG visualization
+* JSON structured results
+* TXT VLM scene reports
 
 ---
 
 ## System Architecture
 
+The proposed framework contains three complementary perception branches:
+
 ```text
-                         RGB Disaster Image
-                                │
-                                ▼
-                     Image Preprocessing
-                         256 × 256 RGB
-                                │
-                                ▼
-                 SimAM-FPN Faster R-CNN
-                                │
-                    ┌───────────┴───────────┐
-                    │                       │
-                    ▼                       ▼
-             Victim Bounding Boxes    Confidence Scores
-                    │                       │
-                    └───────────┬───────────┘
-                                │
-                                ▼
-                     Detector Context
-                                │
-                ┌───────────────┴───────────────┐
-                │                               │
-                │ Original RGB Scene            │
-                │                               ▼
-                └──────────────────────► Vision-Language Model
-                                         SmolVLM-500M-Instruct
-                                                  │
-                                                  ▼
-                                       USAR Scene Description
-                                                  │
-                     ┌────────────────────────────┼─────────────────────────┐
-                     ▼                            ▼                         ▼
-               Scene Summary                Visible Hazards        Victim Observations
-                     │                            │                         │
-                     ├────────────────────────────┼─────────────────────────┤
-                     ▼                            ▼                         ▼
-             Access / Egress              USAR Priorities          Uncertainty Report
+                         RGB / UAV Image
+                               │
+               ┌───────────────┴───────────────┐
+               │                               │
+               ▼                               ▼
+     SimAM-FPN Faster R-CNN          Open-Vocabulary Detector
+       Specialized Victim               Rescue Vocabulary
+           Detection                         │
+               │                             │
+               │                 ┌───────────┴───────────┐
+               │                 │                       │
+               │                 ▼                       ▼
+               │          Trapped Person          Rescue Landmarks
+               │          Victim Candidate      Hazards / Access /
+               │                             Structures / Equipment
+               │
+               └───────────────┬───────────────────────┘
+                               │
+                               ▼
+                       Cross-Model Fusion
+                               │
+                       IoU / Confidence
+                               │
+                               ▼
+                    Rescue Landmark Index
+                               │
+                 ┌─────────────┴─────────────┐
+                 │                           │
+                 ▼                           ▼
+          2-D Semantic Map             Optional 3-D Map
+                                      Depth + Intrinsics
+                 │                           │
+                 └─────────────┬─────────────┘
+                               ▼
+                            SmolVLM
+                               │
+                               ▼
+                    Structured USAR Report
 ```
 
----
-
-## Main Features
-
-* Victim detection in post-disaster imagery.
-* SimAM attention mechanism.
-* Lightweight multi-scale CNN backbone.
-* Custom Feature Pyramid Network.
-* Faster R-CNN object detector.
-* Fixed **256 × 256 RGB detector input**.
-* CUDA/GPU acceleration.
-* Confidence-based victim filtering.
-* Optional YOLO-format ground-truth annotations.
-* IoU calculation.
-* One-to-one predicted/ground-truth matching.
-* TP, FP, and FN evaluation.
-* Precision and recall calculation.
-* Mean true-positive IoU.
-* Vision-Language Model integration.
-* Structured USAR environment description.
-* Google Colab interactive interface.
-* Image-upload mode.
-* NPY dataset test mode.
-* Google Drive support.
-* PNG visualization export.
-* JSON detection report.
-* Text-based USAR VLM report.
-* Model caching for repeated inference.
+The specialized detector remains responsible for robust victim localization, while the open-vocabulary branch allows the system to recognize rescue concepts that were not necessarily included in the original victim-detector training dataset.
 
 ---
 
-## USAR Scene Understanding
+## Victim Detection
 
-The VLM produces a structured operational report containing:
-
-### 1. Scene Summary
-
-General description of the observed disaster environment.
-
-### 2. Visible Structural / Debris Conditions
-
-Visual observations such as:
-
-* collapsed building elements,
-* rubble,
-* concrete debris,
-* damaged walls,
-* obstructed areas,
-* visible structural damage.
-
-### 3. Victim Observations
-
-Candidate victim information based on:
-
-* Faster R-CNN detections,
-* confidence values,
-* approximate victim location within the image,
-* visually observable context.
-
-### 4. Access and Egress Observations
-
-Potentially relevant visible information regarding:
-
-* blocked passages,
-* open areas,
-* debris accumulation,
-* apparent access paths,
-* obstacles.
-
-### 5. Visible Hazards
-
-Examples may include visually observable:
-
-* unstable-looking debris,
-* large concrete fragments,
-* damaged structures,
-* blocked areas,
-* exposed obstacles.
-
-The VLM is instructed not to invent hazards that cannot be visually confirmed.
-
-### 6. USAR Operational Priorities
-
-The system can identify observations that may warrant human attention, such as:
-
-* verifying detected victim locations,
-* inspecting obstructed areas,
-* assessing visible debris around victims,
-* evaluating potential access routes.
-
-### 7. Uncertainty / Human Verification
-
-The system explicitly reports information that cannot be reliably determined from a single RGB image.
-
----
-
-## Important Safety Principle
-
-This application is intended as an **AI-assisted visual decision-support system**.
-
-It must **not** be used as an autonomous authority for:
-
-* structural safety assessment,
-* declaring a building safe to enter,
-* medical diagnosis,
-* determining victim condition,
-* confirming utility hazards,
-* confirming safe rescue routes,
-* replacing trained USAR personnel.
-
-All AI-generated detections and VLM descriptions require validation by qualified rescue personnel.
-
----
-
-## Detector Architecture
-
-The detector uses the following processing chain:
+The primary detector is based on:
 
 ```text
-RGB Image
-   │
-   ▼
-Conv Stem
-   │
-   ▼
-Inverted Residual Blocks
-   │
-   ├── SimAM
-   │
-   ▼
-Multi-scale CNN Features
-   │
-   ▼
-Custom Lightweight FPN
-   │
-   ├── P2
-   ├── P3
-   ├── P4
-   └── P5
-   │
-   ▼
+Input Image
+   ↓
+Lightweight CNN Backbone
+   ↓
+SimAM Attention
+   ↓
+Feature Pyramid Network
+   ↓
 Region Proposal Network
-   │
-   ▼
-MultiScaleRoIAlign
-   │
-   ▼
-Faster R-CNN Detection Head
-   │
-   ▼
-Victim
+   ↓
+Faster R-CNN ROI Heads
+   ↓
+Victim Bounding Boxes
 ```
 
-The detector contains two classes internally:
+The detector uses two Faster R-CNN classes:
 
 ```text
-0 = background
-1 = victim
+0 → Background
+1 → Victim
+```
+
+Predictions are filtered according to a configurable confidence threshold.
+
+Example:
+
+```text
+SimAM-FPN V1 Victim
+Confidence = 0.934
+Box = [45.2, 71.8, 132.5, 226.1]
 ```
 
 ---
 
-## SimAM Attention
+## Open-Vocabulary Rescue Detection
 
-The backbone integrates the **Simple, Parameter-Free Attention Module (SimAM)**.
+Unlike a conventional detector with a fixed number of classes, the open-vocabulary branch receives natural-language rescue concepts.
 
-SimAM enhances feature responses without introducing a conventional trainable attention network.
+The default rescue vocabulary can include:
 
-It is applied within selected inverted residual blocks to improve the representation of relevant victim features in complex disaster scenes.
+```python
+RESCUE_VOCABULARY = [
+    "person",
+    "victim",
+    "injured person",
+    "trapped person",
+    "unconscious person",
+    "person lying on the ground",
+    "rescue worker",
+
+    "door",
+    "doorway",
+    "window",
+    "stairs",
+    "ladder",
+    "corridor",
+    "opening",
+    "void space",
+
+    "rubble",
+    "debris",
+    "collapsed wall",
+    "concrete slab",
+    "beam",
+    "column",
+    "damaged building",
+
+    "fire",
+    "smoke",
+    "water",
+    "electrical cable",
+    "electrical panel",
+    "gas cylinder",
+
+    "helmet",
+    "stretcher",
+    "medical kit",
+    "backpack",
+]
+```
+
+The vocabulary can be modified without retraining the specialized Faster R-CNN detector.
 
 ---
 
-## Input Resolution
+## Trapped-Person Victim Detection
 
-The detector operates using:
+A particularly important feature is the interpretation of the open-vocabulary concept:
 
 ```text
-256 × 256 × 3
+"trapped person"
 ```
+
+as a **Victim Detection** rather than only a generic semantic landmark.
+
+Example:
+
+```text
+Victim Detection
+trapped person
+Confidence = 0.82
+```
+
+The system then compares the `trapped person` bounding box with victim boxes produced by SimAM-FPN Faster R-CNN.
+
+---
+
+## Cross-Model IoU
+
+For a SimAM-FPN victim bounding box (B_S) and an open-vocabulary trapped-person box (B_T), spatial agreement is calculated as
+
+[
+IoU(B_S,B_T)
+============
+
+\frac{|B_S \cap B_T|}
+{|B_S \cup B_T|}.
+]
+
+For example:
+
+```text
+Open-Vocabulary:
+Victim detection
+trapped person
+Conf = 0.824
+IoU(SimAM V1) = 0.713
+```
+
+and:
+
+```text
+SimAM-FPN:
+SimAM-FPN V1 Victim
+Conf = 0.914
+IoU(trapped person) = 0.713
+MATCH
+```
+
+A configurable IoU threshold can be used to classify the cross-model relationship:
+
+```text
+IoU ≥ 0.50 → MATCH
+IoU < 0.50 → LOW_IOU
+```
+
+### Important
+
+Cross-model IoU is an **agreement measure between two AI models**.
+
+It should not be interpreted as ground-truth accuracy.
+
+When human-annotated bounding boxes are available, the software reports ground-truth IoU separately.
+
+---
+
+## Ground-Truth Evaluation
+
+Optional YOLO-format annotations can be supplied:
+
+```text
+class_id x_center y_center width height
+```
+
+All coordinates are normalized between 0 and 1.
+
+Example:
+
+```text
+0 0.512 0.463 0.284 0.510
+```
+
+When annotations are available, the program calculates:
+
+* True Positives
+* False Positives
+* False Negatives
+* Precision
+* Recall
+* IoU
+* Mean TP IoU
+
+Example:
+
+```text
+Detected victims: 3
+Ground-truth victims: 2
+
+TP = 2
+FP = 1
+FN = 0
+
+Precision = 0.667
+Recall = 1.000
+Mean TP IoU = 0.742
+```
+
+When ground truth is unavailable:
+
+```text
+IoU = N/A
+```
+
+This prevents model-to-model agreement from being confused with annotation-based evaluation.
+
+---
+
+## Rescue Landmark Indexing
+
+Open-vocabulary detections are converted into rescue landmarks.
+
+A landmark can contain:
+
+```text
+Landmark ID
+Object / concept
+Category
+Confidence
+Bounding box
+Image center
+Semantic grid position
+Operational priority
+Victim association
+3-D position, when available
+```
+
+Conceptually,
+
+[
+L_k =
+{
+c_k,
+s_k,
+u_k,
+v_k,
+g_x,
+g_y,
+C_k,
+P_k
+},
+]
 
 where:
 
+* (c_k): semantic concept
+* (s_k): detection confidence
+* (u_k,v_k): image coordinates
+* (g_x,g_y): semantic-grid coordinates
+* (C_k): rescue category
+* (P_k): operational indexing priority
+
+---
+
+## Rescue Categories
+
+Detected concepts are automatically grouped into operational categories such as:
+
 ```text
-Width    = 256 pixels
-Height   = 256 pixels
-Channels = RGB
+victim
+responder
+hazard
+access
+structure
+equipment
+landmark
 ```
 
-External images are converted using:
+For example:
 
-```python
-image = (
-    ImageOps
-    .exif_transpose(image)
-    .convert("RGB")
-    .resize(
-        (256, 256),
-        Image.Resampling.BILINEAR,
-    )
-)
-```
+| Detection        | Rescue Category |
+| ---------------- | --------------- |
+| trapped person   | victim          |
+| injured person   | victim          |
+| rescue worker    | responder       |
+| smoke            | hazard          |
+| electrical cable | hazard          |
+| doorway          | access          |
+| stairs           | access          |
+| collapsed wall   | structure       |
+| concrete slab    | structure       |
+| stretcher        | equipment       |
+
+These labels support higher-level semantic mapping rather than simple object detection.
+
+---
+
+## Optional 3-D Landmark Mapping
+
+If depth measurements and camera intrinsic parameters are available, a 2-D detection center can be projected into camera-frame 3-D coordinates.
+
+For pixel position ((u,v)) and depth (Z):
+
+[
+X =
+\frac{(u-c_x)Z}{f_x},
+]
+
+[
+Y =
+\frac{(v-c_y)Z}{f_y},
+]
+
+[
+Z = Z(u,v).
+]
+
+The resulting landmark becomes:
+
+[
+P_k = [X_k,Y_k,Z_k]^T.
+]
+
+This allows future integration with:
+
+* RGB-D cameras
+* Stereo cameras
+* LiDAR
+* Visual-Inertial Odometry
+* SLAM
+* UAV navigation systems
+* UWB localization
+* GPS-denied mapping
 
 ---
 
 ## Vision-Language Model
 
-The default VLM is:
+The framework also integrates a lightweight VLM for USAR-oriented scene understanding.
 
-```text
-HuggingFaceTB/SmolVLM-500M-Instruct
-```
-
-The implementation uses a compatibility loader supporting:
+Default configuration:
 
 ```python
-AutoModelForImageTextToText
+VLM_MODEL_ID = "HuggingFaceTB/SmolVLM-500M-Instruct"
 ```
 
-with fallback to:
+The VLM receives information from both the image and detector context.
 
-```python
-AutoModelForVision2Seq
-```
-
-for older `transformers` versions.
-
-The model is loaded only when VLM analysis is requested.
-
----
-
-## USAR VLM Prompt
-
-The VLM is instructed to analyze only visible evidence and detector context.
-
-The default report structure is:
+The generated operational report contains:
 
 ```text
 1. SCENE SUMMARY
-
 2. VISIBLE STRUCTURAL / DEBRIS CONDITIONS
-
 3. VICTIM OBSERVATIONS
-
 4. ACCESS AND EGRESS OBSERVATIONS
-
 5. VISIBLE HAZARDS
-
 6. USAR OPERATIONAL PRIORITIES
-
 7. UNCERTAINTY / ITEMS REQUIRING HUMAN VERIFICATION
 ```
 
-The prompt explicitly instructs the model not to invent:
-
-* people,
-* injuries,
-* hazards,
-* utility conditions,
-* building occupancy,
-* structural stability,
-* safe access routes.
+The VLM is instructed not to invent hazards, victims, injuries, structural conditions, or safe routes that cannot be visually supported.
 
 ---
 
-## Google Colab Installation
-
-Create a new Google Colab notebook and enable GPU acceleration:
-
-```text
-Runtime
-   ↓
-Change runtime type
-   ↓
-Hardware accelerator
-   ↓
-GPU
-```
-
-Install the required packages:
-
-```bash
-pip install -q -U transformers accelerate safetensors ipywidgets
-```
-
-TorchVision and PyTorch are normally preinstalled in Google Colab.
-
-If required:
-
-```bash
-pip install torch torchvision
-```
-
----
-
-## FlashAttention
-
-`flash-attn` is **not required** by the supplied implementation.
-
-The VLM loader uses an attention configuration compatible with standard PyTorch execution.
-
-This avoids long FlashAttention compilation times in Google Colab.
-
----
-
-## Running the Application
-
-Execute the Python code in Colab and launch:
+## Example Processing Pipeline
 
 ```python
-create_colab_interface()
+image
+   ↓
+resize 256 × 256
+   ↓
+SimAM-FPN Faster R-CNN
+   ↓
+candidate victim boxes
+   │
+   ├───────────────┐
+   │               │
+   ▼               ▼
+Ground Truth     Open-Vocabulary Detector
+IoU              ↓
+                 trapped person
+                 rubble
+                 smoke
+                 doorway
+                 ...
+                   │
+                   ▼
+          Cross-model victim IoU
+                   │
+                   ▼
+          Rescue landmark indexing
+                   │
+                   ▼
+                SmolVLM
+                   │
+                   ▼
+         Structured USAR report
 ```
-
-The interactive interface will appear in the notebook.
 
 ---
 
-## Google Colab Interface
+## Installation
 
-The interface provides the following controls.
+The project is intended primarily for **Google Colab** or a CUDA-enabled Python environment.
 
-### Model Configuration
+### Clone the Repository
 
-```text
-Detector .pt
-VLM model
-Output folder
-Compute device
+```bash
+git clone <YOUR_REPOSITORY_URL>
+cd <YOUR_REPOSITORY>
 ```
 
-### Input Modes
+### Install Dependencies
 
-Two input modes are available.
+```bash
+pip install -U \
+    torch \
+    torchvision \
+    transformers \
+    accelerate \
+    safetensors \
+    numpy \
+    pillow \
+    matplotlib \
+    ipywidgets
+```
 
-#### Upload Image
+For Google Colab:
 
-Upload:
+```python
+!pip install -q -U transformers accelerate safetensors ipywidgets
+```
+
+A separate `flash-attn` installation is not required by the supplied VLM configuration.
+
+---
+
+## Model Checkpoint
+
+Place the trained SimAM-FPN Faster R-CNN model in:
+
+```text
+/content/SAR_SimAM_FasterRCNN/
+```
+
+Default model:
+
+```text
+fasterrcnn_simam_fpn_best.pt
+```
+
+Example configuration:
+
+```python
+MODEL_PT = Path(
+    "/content/SAR_SimAM_FasterRCNN/"
+    "fasterrcnn_simam_fpn_best.pt"
+)
+```
+
+The checkpoint must correspond to the same SimAM-FPN Faster R-CNN architecture used by the inference program.
+
+---
+
+## Running the Project
+
+Main program:
+
+```text
+sar_vlm_open_vocab_trapped_iou.py
+```
+
+Run inside Colab or Jupyter:
+
+```python
+%run sar_vlm_open_vocab_trapped_iou.py
+```
+
+or from a terminal:
+
+```bash
+python sar_vlm_open_vocab_trapped_iou.py
+```
+
+---
+
+## Input Modes
+
+The project supports two principal input modes.
+
+### External Image
+
+```python
+TEST_MODE = "image"
+
+IMAGE_PATH = Path(
+    "/content/victims_8.jpg"
+)
+```
+
+Supported formats include:
 
 ```text
 .jpg
@@ -419,15 +587,19 @@ Upload:
 .tiff
 ```
 
-Optional YOLO ground truth:
+### NPY Dataset
 
-```text
-.txt
+```python
+TEST_MODE = "npy"
+
+DATA_ROOT = Path(
+    "/content/drive/MyDrive/SAR_Earthquake_NPY"
+)
+
+TEST_INDEX = 0
 ```
 
-#### NPY Dataset
-
-The application can read:
+Expected files include:
 
 ```text
 X_test.npy
@@ -435,339 +607,65 @@ y_test.npy
 box_count_test.npy
 ```
 
-and select a sample using its test index.
-
 ---
 
-## Detection Controls
+## Ground-Truth Annotation
 
-### Confidence Threshold
-
-Example:
-
-```text
-0.30
-```
-
-Only predictions satisfying:
-
-```text
-confidence >= threshold
-```
-
-are retained.
-
-### IoU Threshold
-
-Example:
-
-```text
-0.50
-```
-
-A detection can be classified as a true positive when:
-
-```text
-IoU >= IoU threshold
-```
-
-and the corresponding ground-truth box has not already been assigned.
-
-### Maximum Detections
-
-Controls the maximum number of victim candidates returned for each image.
-
----
-
-## Vision-Language Controls
-
-The interface includes:
-
-```text
-Generate USAR VLM scene report
-VLM model
-Maximum generation tokens
-Editable USAR prompt
-```
-
-The VLM can therefore be enabled or disabled independently from the object detector.
-
----
-
-## IoU Evaluation
-
-When ground truth is available, the application computes Intersection over Union:
-
-```text
-                 Area(Prediction ∩ Ground Truth)
-IoU = ------------------------------------------------
-                 Area(Prediction ∪ Ground Truth)
-```
-
-Example:
-
-```text
-IoU = 0.82
-```
-
-with:
-
-```text
-IoU threshold = 0.50
-```
-
-results in:
-
-```text
-True Positive
-```
-
-assuming the ground-truth victim has not already been matched.
-
----
-
-## Ground-Truth Format
-
-Ground-truth files use normalized YOLO format:
-
-```text
-class_id x_center y_center width height
-```
-
-Example:
-
-```text
-0 0.273438 0.658203 0.179688 0.613281
-0 0.431641 0.611328 0.191406 0.472656
-```
-
-where:
-
-```text
-0 = victim
-```
-
-and all coordinates are normalized to:
-
-```text
-0.0 – 1.0
-```
-
----
-
-## Example Detection Output
-
-```text
-================================================================
-VICTIM DETECTION RESULTS
-================================================================
-
-Detected victims: 2
-Ground-truth victims: 2
-
-P1:
-Victim
-confidence = 0.882
-IoU = 0.81
-GT = 1
-TP
-
-P2:
-Victim
-confidence = 0.703
-IoU = 0.74
-GT = 2
-TP
-```
-
----
-
-## Example USAR Report
-
-An example VLM response may have the following structure:
-
-```text
-1. SCENE SUMMARY
-
-The image shows a heavily damaged urban environment with extensive
-concrete debris and partially collapsed structural elements.
-
-2. VISIBLE STRUCTURAL / DEBRIS CONDITIONS
-
-Large quantities of rubble and fragmented concrete are visible.
-Several areas appear obstructed by debris.
-
-3. VICTIM OBSERVATIONS
-
-The detector reports two candidate victim locations in the lower-central
-portion of the image. These detections require confirmation by USAR personnel.
-
-4. ACCESS AND EGRESS OBSERVATIONS
-
-Direct access to the candidate locations appears partially obstructed
-by rubble. A safe access route cannot be confirmed from the image.
-
-5. VISIBLE HAZARDS
-
-Large debris and damaged structural elements are visible.
-Structural stability is not visually confirmed.
-
-6. USAR OPERATIONAL PRIORITIES
-
-Verify the two candidate victim locations and conduct an on-site
-structural and access assessment before entry.
-
-7. UNCERTAINTY / ITEMS REQUIRING HUMAN VERIFICATION
-
-Victim condition, structural stability, utility hazards, and safe
-access routes cannot be confirmed from this image.
-```
-
----
-
-## Output Files
-
-For an image such as:
-
-```text
-victims_8.jpg
-```
-
-the application generates:
-
-```text
-victims_8_victim_iou_plot.png
-victims_8_victim_iou.json
-victims_8_USAR_VLM_report.txt
-```
-
----
-
-## JSON Output
-
-Example:
-
-```json
-{
-  "sample": "victims_8",
-  "score_threshold": 0.5,
-  "iou_threshold": 0.5,
-  "detected_victims": 2,
-  "ground_truth_victims": 2,
-  "tp": 2,
-  "fp": 0,
-  "fn": 0,
-  "detections": [
-    {
-      "victim_id": 1,
-      "confidence": 0.882,
-      "box_xyxy": [
-        48.2,
-        91.1,
-        134.7,
-        232.4
-      ],
-      "best_iou": 0.81,
-      "best_gt_id": 1,
-      "status": "TP"
-    }
-  ],
-  "usar_vlm": {
-    "enabled": true,
-    "model": "HuggingFaceTB/SmolVLM-500M-Instruct",
-    "generation_time_ms": 820.5,
-    "report_file": "victims_8_USAR_VLM_report.txt",
-    "report": "USAR scene description..."
-  }
-}
-```
-
----
-
-## Repository Structure
-
-A suggested repository layout is:
-
-```text
-SAR-Victim-Detection-USAR-VLM/
-│
-├── README.md
-│
-├── LICENSE
-│
-├── requirements.txt
-│
-├── src/
-│   └── SAR_FasterRCNN_SmolVLM_USAR_Colab_256_FIXED.py
-│
-├── models/
-│   └── README.md
-│
-├── examples/
-│   ├── victims_8.jpg
-│   └── victims_8.txt
-│
-├── results/
-│   ├── victim_iou_plot.png
-│   ├── victim_iou.json
-│   └── USAR_VLM_report.txt
-│
-└── notebooks/
-    └── SAR_USAR_Colab.ipynb
-```
-
-Large `.pt` model files should normally not be committed directly to GitHub.
-
-Consider using:
-
-```text
-Git LFS
-```
-
-or providing a separate model-download link.
-
----
-
-## Requirements
-
-Suggested `requirements.txt`:
-
-```text
-numpy
-pillow
-matplotlib
-torch
-torchvision
-transformers
-accelerate
-safetensors
-ipywidgets
-```
-
----
-
-## Model File
-
-The Faster R-CNN checkpoint expected by the application is:
-
-```text
-fasterrcnn_simam_fpn_best.pt
-```
-
-Example Colab path:
+Ground truth is optional.
 
 ```python
-MODEL_PT = Path(
-    "/content/SAR_SimAM_FasterRCNN/"
-    "fasterrcnn_simam_fpn_best.pt"
+GT_YOLO_PATH = None
+```
+
+or:
+
+```python
+GT_YOLO_PATH = Path(
+    "/content/victims_8.txt"
 )
 ```
 
+If no annotation is supplied, victim detection continues normally but annotation-based IoU is reported as:
+
+```text
+N/A
+```
+
 ---
 
-## CUDA Support
+## Important Parameters
 
-The application automatically selects CUDA when available:
+### Victim confidence
+
+```python
+SCORE_THRESHOLD = 0.30
+```
+
+### Ground-truth IoU
+
+```python
+IOU_THRESHOLD = 0.50
+```
+
+### Maximum number of detections
+
+```python
+MAX_DETECTIONS = 50
+```
+
+### Detector input resolution
+
+```python
+INFERENCE_SIZE = 256
+```
+
+These values should be adjusted using a validation dataset rather than selected from a single example image.
+
+---
+
+## CUDA Acceleration
+
+The program automatically checks for CUDA:
 
 ```python
 DEVICE = torch.device(
@@ -777,213 +675,337 @@ DEVICE = torch.device(
 )
 ```
 
-On a GPU-enabled Colab runtime, the interface displays the detected NVIDIA GPU.
+When a GPU is available, inference runs on CUDA.
 
----
-
-## Model Caching
-
-Both AI models are cached after loading:
+Example output:
 
 ```text
-Faster R-CNN
-SmolVLM
+Device: cuda
+GPU: NVIDIA T4
+Detector loaded successfully.
 ```
 
-Therefore, subsequent image analyses do not require model reloading unless the selected model changes.
-
-This significantly reduces repeated inference overhead.
+For repeated inference, detector and VLM instances are cached to avoid unnecessary model reloading.
 
 ---
 
-## Intended Applications
+## Visualization
 
-Potential research applications include:
+The generated figure distinguishes different information sources.
 
-* Urban Search and Rescue.
-* Earthquake response.
-* Post-disaster victim detection.
-* UAV-based disaster reconnaissance.
-* Robotic disaster exploration.
-* Emergency-response situational awareness.
-* AI-assisted SAR mapping.
-* Human detection in rubble environments.
-* Edge-assisted UAV perception.
-* Multimodal rescue robotics.
-* Disaster-response decision support.
-
----
-
-## UAV Integration
-
-The system can be extended to operate with UAV imagery:
+Typical visualization:
 
 ```text
-UAV Camera
-    │
-    ▼
-RGB Frame
-    │
-    ▼
-Resize 256 × 256
-    │
-    ▼
-Victim Detector
-    │
-    ├── Victim position
-    └── Confidence
-    │
-    ▼
-VLM Environment Analysis
-    │
-    ▼
-USAR Situation Report
-    │
-    ▼
-Ground Control Station
+Red solid box
+→ SimAM-FPN victim prediction
+
+Magenta dashed box
+→ Open-vocabulary trapped-person victim prediction
+
+Green box
+→ Ground-truth victim, when available
 ```
 
-Future versions may combine this system with:
+Example annotation:
 
-* GPS-denied navigation,
-* Visual-Inertial Odometry,
-* SLAM,
-* UWB localization,
-* WiFi-CSI sensing,
-* thermal imaging,
-* LiDAR,
-* RF sensing,
-* multi-UAV coordination.
+```text
+SimAM-FPN V1 Victim
+Conf = 0.914
+IoU(GT) = 0.782
+IoU(trapped person) = 0.713
+MATCH
+```
+
+The visualization therefore separates:
+
+```text
+Detection confidence
+Ground-truth IoU
+Cross-model IoU
+```
+
+---
+
+## Output Files
+
+Typical outputs include:
+
+```text
+<sample>_victim_iou_plot.png
+
+<sample>_victim_iou.json
+
+<sample>_open_vocabulary_rescue_map.png
+
+<sample>_rescue_landmarks.json
+
+<sample>_USAR_VLM_report.txt
+```
+
+The precise set of files depends on the enabled modules.
+
+---
+
+## Example JSON Concept
+
+A victim candidate may be represented as:
+
+```json
+{
+  "victim_id": 1,
+  "source": "SimAM-FPN",
+  "confidence": 0.914,
+  "box_xyxy": [
+    48.2,
+    66.4,
+    137.9,
+    224.3
+  ],
+  "ground_truth_iou": 0.782,
+  "trapped_person_iou": 0.713,
+  "cross_model_status": "MATCH"
+}
+```
+
+An open-vocabulary victim candidate may appear as:
+
+```json
+{
+  "label": "trapped person",
+  "category": "victim",
+  "confidence": 0.824,
+  "box_xyxy": [
+    51.7,
+    69.1,
+    140.4,
+    221.8
+  ],
+  "best_simam_victim": 1,
+  "cross_model_iou": 0.713
+}
+```
+
+---
+
+## Research Motivation
+
+Victim detection in disaster environments is difficult because visual conditions can vary substantially because of:
+
+* debris
+* occlusion
+* dust
+* collapsed structures
+* irregular victim poses
+* partial visibility
+* poor illumination
+* unusual viewpoints
+* UAV camera motion
+
+A detector trained only with a fixed `victim` class may fail to represent the semantic diversity of rescue scenes.
+
+The proposed framework therefore combines a **specialized trained detector** with **open-vocabulary semantic perception**.
+
+This enables concepts such as:
+
+```text
+trapped person
+person under rubble
+injured person
+person lying down
+void space
+collapsed wall
+smoke
+doorway
+stretcher
+```
+
+to contribute to rescue-scene understanding without requiring every concept to be included as a dedicated Faster R-CNN training class.
+
+---
+
+## Proposed Research Contribution
+
+The framework investigates a hybrid perception strategy:
+
+[
+\text{Specialized Detection}
++
+\text{Open-Vocabulary Perception}
++
+\text{Semantic Mapping}
++
+\text{Vision-Language Reasoning}.
+]
+
+The specialized SimAM-FPN detector provides task-specific victim localization, while the open-vocabulary detector expands the semantic representation of the environment.
+
+Cross-model IoU then provides an interpretable measure of spatial agreement:
+
+[
+A_{ij}
+======
+
+IoU
+\left(
+B_i^{SimAM},
+B_j^{OV}
+\right).
+]
+
+The resulting semantic landmarks can subsequently be associated with depth, UAV pose, VIO, SLAM, or UWB localization to construct a rescue-oriented spatial map.
+
+---
+
+## Potential UAV Integration
+
+The framework can serve as the perception component of a GPS-denied rescue UAV:
+
+```text
+UAV RGB / RGB-D Camera
+          │
+          ▼
+    Victim Detection
+          │
+          ▼
+Open-Vocabulary Scene Perception
+          │
+          ▼
+   Rescue Landmark Map
+          │
+     ┌────┴────┐
+     ▼         ▼
+    VIO       UWB
+     │         │
+     └────┬────┘
+          ▼
+   3-D Rescue Map
+          │
+          ▼
+ Path Planning / USAR Team
+```
+
+Possible future extensions include:
+
+* VIO-based landmark registration
+* 3-D semantic SLAM
+* UWB-based UAV localization
+* multiple-drone semantic mapping
+* temporal victim tracking
+* thermal-camera fusion
+* depth-camera fusion
+* LiDAR fusion
+* uncertainty-aware rescue prioritization
+* real-time edge inference
+* FPGA / embedded acceleration
 
 ---
 
 ## Limitations
 
-The current system has several important limitations.
+This project is intended as **research and decision-support software**.
 
-### RGB Dependence
+Several limitations should be considered:
 
-The VLM and detector operate primarily on RGB imagery.
+* A detected person is not automatically a confirmed victim.
+* `trapped person` is an AI semantic prediction and requires human verification.
+* High cross-model IoU does not constitute ground truth.
+* A single RGB image cannot determine structural stability.
+* A VLM cannot reliably determine medical condition from appearance alone.
+* Occlusion and debris can reduce victim-detection recall.
+* Open-vocabulary scores are not necessarily calibrated probabilities.
+* Scene descriptions may contain uncertainty and should be reviewed by trained personnel.
+* The system should not independently authorize entry into hazardous structures.
 
-Performance may decrease under:
+---
 
-* smoke,
-* darkness,
-* severe occlusion,
-* dust,
-* motion blur,
-* extreme viewing angles.
+## Responsible Use
 
-### Victim Occlusion
+The system is intended to assist trained personnel in:
 
-Victims partially or completely covered by debris may not be detected.
+* Urban Search and Rescue research
+* UAV disaster-response experiments
+* victim-localization studies
+* rescue-scene semantic mapping
+* perception benchmarking
+* GPS-denied navigation research
 
-### VLM Hallucination Risk
+AI predictions should be interpreted as **candidate observations requiring human verification**.
 
-Vision-Language Models can produce incorrect or unsupported statements.
+The framework must not be considered a replacement for trained emergency responders, structural engineers, medical personnel, or established USAR operational procedures.
 
-For this reason, the supplied prompt requires explicit uncertainty reporting and human verification.
+---
 
-### Structural Assessment
+## Project File
 
-A monocular RGB image cannot provide reliable structural engineering assessment.
-
-### Ground Truth
-
-IoU, precision, recall, TP, FP, and FN require valid ground-truth annotations.
-
-When ground truth is unavailable:
+Current implementation:
 
 ```text
-IoU = N/A
+sar_vlm_open_vocab_trapped_iou.py
+```
+
+Core technologies:
+
+```text
+Python
+PyTorch
+TorchVision
+SimAM
+Feature Pyramid Network
+Faster R-CNN
+Open-Vocabulary Detection
+Transformers
+SmolVLM
+Matplotlib
+Google Colab
+CUDA
 ```
 
 ---
 
-## Future Work
+## Suggested Repository Name
 
-Possible future improvements include:
-
-* real-time UAV video processing,
-* thermal-camera integration,
-* RGB-thermal fusion,
-* depth estimation,
-* LiDAR fusion,
-* UWB victim localization,
-* RF-based victim sensing,
-* WiFi-CSI respiration detection,
-* multi-UAV cooperative perception,
-* temporal VLM reasoning,
-* VLM-guided UAV navigation,
-* automatic disaster-scene mapping,
-* georeferenced victim reporting,
-* edge-device deployment,
-* TensorRT acceleration,
-* model quantization,
-* ONNX export,
-* FPGA-assisted inference,
-* uncertainty calibration,
-* rescue-priority estimation.
-
----
-
-## Research Disclaimer
-
-This project is intended for **research, experimentation, and decision-support development**.
-
-The software should not be interpreted as a certified life-safety, structural-assessment, or autonomous rescue system.
-
-All detections and scene descriptions must be reviewed by qualified personnel before operational decisions are made.
-
----
-
-## Citation
-
-If this repository contributes to academic research, please cite the corresponding publication or project documentation.
-
-Example placeholder:
-
-```bibtex
-@software{sar_usar_vlm,
-  title  = {SAR Victim Detection and USAR Scene Understanding
-            Using SimAM-FPN Faster R-CNN and Vision-Language Models},
-  author = {Carlos Osorio Quero},
-  year   = {2026},
-  note   = {Research software for AI-assisted Urban Search and Rescue}
-}
+```text
+RescueVision-OpenVocab-USAR
 ```
 
-Update the citation information when the associated publication is available.
+Alternative:
+
+```text
+OpenRescue-VLM
+```
+
+or:
+
+```text
+SAR-OpenVocab-VictimNet
+```
+
+---
+
+## Suggested Citation
+
+If this project contributes to academic work, please cite the corresponding publication or repository release associated with the implementation.
+
+A repository citation can later be provided through a `CITATION.cff` file.
 
 ---
 
 ## License
 
-Select a license according to the intended use of the project.
+Add the license appropriate for your research and model dependencies.
 
-Common options include:
+For example:
 
 ```text
 MIT License
-Apache License 2.0
-BSD 3-Clause License
 ```
 
-Verify that the selected license is compatible with the licenses of the pretrained models and datasets used by the project.
+Before redistribution, verify the licenses and usage conditions of all pretrained models, datasets, and external dependencies included in the project.
 
 ---
 
-## Acknowledgments
+## Acknowledgment
 
-This project builds on open-source technologies including:
+This project explores the integration of **specialized deep-learning victim detection, open-vocabulary visual perception, semantic rescue mapping, and vision-language reasoning** for AI-assisted Urban Search and Rescue applications.
 
-* PyTorch
-* TorchVision
-* Hugging Face Transformers
-* SmolVLM
-* NumPy
-* Pillow
-* Matplotlib
-* Google Colab
-
-The framework is developed as a research platform for **AI-assisted victim detection and situational awareness in Urban Search and Rescue environments**.
+The objective is to improve situational awareness in complex disaster environments while maintaining explicit uncertainty and human verification throughout the rescue decision-support pipeline.
