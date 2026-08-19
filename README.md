@@ -314,7 +314,7 @@ Victim association
 
 Conceptually,
 
-[
+$$
 L_k =
 {
 c_k,
@@ -326,16 +326,16 @@ g_y,
 C_k,
 P_k
 },
-]
+$$
 
 where:
 
-* (c_k): semantic concept
-* (s_k): detection confidence
-* (u_k,v_k): image coordinates
-* (g_x,g_y): semantic-grid coordinates
-* (C_k): rescue category
-* (P_k): operational indexing priority
+* $$(c_k)$$: semantic concept
+* $$(s_k)$$: detection confidence
+* $$(u_k,v_k)$$: image coordinates
+* $$(g_x,g_y)$$: semantic-grid coordinates
+* $$(C_k)$$: rescue category
+* $$(P_k)$$: operational indexing priority
 
 ---
 
