@@ -79,7 +79,7 @@ The proposed framework contains three complementary perception branches:
                     Structured USAR Report
 ```
 
-The specialized detector remains responsible for robust victim localization, while the open-vocabulary branch allows the system to recognize rescue concepts that were not necessarily included in the original victim-detector training dataset.
+The specialized detector remains responsible for robust victim localization, while the open-vocabulary branch enables the system to recognize rescue concepts not necessarily included in the original victim-detector training dataset.
 
 ---
 
@@ -371,45 +371,6 @@ For example:
 | stretcher        | equipment       |
 
 These labels support higher-level semantic mapping rather than simple object detection.
-
----
-
-## Optional 3-D Landmark Mapping
-
-If depth measurements and camera intrinsic parameters are available, a 2-D detection center can be projected into camera-frame 3-D coordinates.
-
-For pixel position ((u,v)) and depth (Z):
-
-[
-X =
-\frac{(u-c_x)Z}{f_x},
-]
-
-[
-Y =
-\frac{(v-c_y)Z}{f_y},
-]
-
-[
-Z = Z(u,v).
-]
-
-The resulting landmark becomes:
-
-[
-P_k = [X_k,Y_k,Z_k]^T.
-]
-
-This allows future integration with:
-
-* RGB-D cameras
-* Stereo cameras
-* LiDAR
-* Visual-Inertial Odometry
-* SLAM
-* UAV navigation systems
-* UWB localization
-* GPS-denied mapping
 
 ---
 
